@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}{{ m.name }} · 子孙树{% endblock %}
+
+{% macro render_node(node) %}
+  <li>
+    <a href="{{ url_for('member_detail', mid=node.id) }}">{{ node.name }}</a>
+    <span class="muted small">{{ '♂' if node.gender == 'M' else '♀' }}{% if node.birth_year %} · {{ node.birth_year }}{% endif %}</span>
+    {% if children_of.get(node.id) %}
+      <ul>
+      {% for child in children_of[node.id] %}
+        {{ render_node(child) }}
+      {% endfor %}
+      </ul>
+    {% endif %}
+  </li>
+{% endmacro %}
+
+{% block content %}
+<header class="page-header">
+  <div><h1>{{ m.name }} 的子孙树（深度 {{ max_depth }}）</h1></div>
+  <div class="actions">
+    {% for d in [2, 3, 4, 5, 6] %}
+      <a class="btn ghost" href="{{ url_for('member_tree', mid=m.id, depth=d) }}">深度 {{ d }}</a>
+    {% endfor %}
+    <a class="btn" href="{{ url_for('member_detail', mid=m.id) }}">返回</a>
+  </div>
+</header>
+
+<div class="card tree">
+  {% if root %}
+    <ul>{{ render_node(root) }}</ul>
+  {% else %}
+    <p class="muted">无数据</p>
+  {% endif %}
+</div>
+{% endblock %}

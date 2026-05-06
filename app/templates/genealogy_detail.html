@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}{{ genealogy.name }}{% endblock %}
+{% block content %}
+<header class="page-header">
+  <div>
+    <h1>{{ genealogy.name }}</h1>
+    <p class="muted">姓氏 {{ genealogy.surname }} · 修谱时间 {{ genealogy.compilation_date }} · 共 {{ n_total }} 人</p>
+  </div>
+  <div class="actions">
+    {% if role != 'viewer' %}
+      <a class="btn primary" href="{{ url_for('member_new', gid=genealogy.id) }}">+ 新增成员</a>
+    {% endif %}
+    {% if role == 'owner' %}
+      <form method="post" action="{{ url_for('genealogy_delete', gid=genealogy.id) }}" class="inline"
+            onsubmit="return confirm('确定删除整个族谱？此操作不可恢复。');">
+        <button class="btn danger">删除族谱</button>
+      </form>
+    {% endif %}
+  </div>
+</header>
+
+<section class="card">
+  <h2>成员（最多显示 200）</h2>
+  <form method="get" class="searchbar">
+    <input name="q" placeholder="姓名模糊查找" value="{{ q }}">
+    <button>搜索</button>
+    {% if q %}<a href="{{ url_for('genealogy_detail', gid=genealogy.id) }}">清空</a>{% endif %}
+  </form>
+  <table>
+    <thead>
+      <tr><th>ID</th><th>姓名</th><th>性别</th><th>生年</th><th>卒年</th><th>辈分</th></tr>
+    </thead>
+    <tbody>
+    {% for m in members %}
+      <tr>
+        <td>{{ m.id }}</td>
+        <td><a href="{{ url_for('member_detail', mid=m.id) }}">{{ m.name }}</a></td>
+        <td>{{ m.gender }}</td>
+        <td>{{ m.birth_year or '' }}</td>
+        <td>{{ m.death_year or '' }}</td>
+        <td>{{ m.generation }}</td>
+      </tr>
+    {% else %}
+      <tr><td colspan="6" class="muted">无匹配结果</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</section>
+
+{% if role != 'viewer' %}
+<section class="card">
+  <h2>协作者</h2>
+  <ul class="collab-list">
+    {% for c in collaborators %}
+      <li>{{ c.username }} <span class="badge">{{ c.role }}</span></li>
+    {% else %}
+      <li class="muted">暂无</li>
+    {% endfor %}
+  </ul>
+  <form method="post" action="{{ url_for('genealogy_invite', gid=genealogy.id) }}" class="invite-form">
+    <input name="username" placeholder="邀请用户名" required>
+    <select name="role">
+      <option value="editor">编辑</option>
+      <option value="viewer">只读</option>
+    </select>
+    <button>邀请</button>
+  </form>
+</section>
+{% endif %}
+{% endblock %}

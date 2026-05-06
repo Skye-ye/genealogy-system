@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}{% if genealogy %}编辑族谱{% else %}新建族谱{% endif %}{% endblock %}
+{% block content %}
+<div class="card narrow">
+  <h1>{% if genealogy %}编辑族谱{% else %}新建族谱{% endif %}</h1>
+  <form method="post">
+    <label>谱名 <input name="name" required value="{{ genealogy.name if genealogy else '' }}"></label>
+    <label>姓氏 <input name="surname" required value="{{ genealogy.surname if genealogy else '' }}"></label>
+    <button type="submit">保存</button>
+  </form>
+</div>
+{% endblock %}

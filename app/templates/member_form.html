@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}{% if member %}编辑成员{% else %}新增成员{% endif %}{% endblock %}
+{% block content %}
+<div class="card narrow">
+  <h1>{% if member %}编辑成员{% else %}新增成员{% endif %}</h1>
+  <form method="post">
+    <label>姓名 <input name="name" required value="{{ member.name if member else '' }}"></label>
+    <label>性别
+      <select name="gender" required>
+        <option value="M" {% if member and member.gender == 'M' %}selected{% endif %}>男</option>
+        <option value="F" {% if member and member.gender == 'F' %}selected{% endif %}>女</option>
+      </select>
+    </label>
+    <label>生年 <input name="birth_year" type="number" min="1" max="2100" value="{{ member.birth_year if member and member.birth_year else '' }}"></label>
+    <label>卒年（留空表示在世）<input name="death_year" type="number" min="1" max="2100" value="{{ member.death_year if member and member.death_year else '' }}"></label>
+    <label>父亲（输入姓名搜索，可留空）
+      <span class="typeahead-wrap">
+        <input type="text" data-typeahead
+               data-fetch-url="{{ url_for('api_member_search') }}"
+               data-genealogy-id="{{ gid }}"
+               data-gender="M"
+               data-id-input="father_id"
+               placeholder="开始输入姓名..."
+               value="{{ father_name or '' }}"
+               autocomplete="off">
+        <input type="hidden" name="father_id" value="{{ member.father_id if member and member.father_id else '' }}">
+      </span>
+    </label>
+    <label>母亲（输入姓名搜索，可留空）
+      <span class="typeahead-wrap">
+        <input type="text" data-typeahead
+               data-fetch-url="{{ url_for('api_member_search') }}"
+               data-genealogy-id="{{ gid }}"
+               data-gender="F"
+               data-id-input="mother_id"
+               placeholder="开始输入姓名..."
+               value="{{ mother_name or '' }}"
+               autocomplete="off">
+        <input type="hidden" name="mother_id" value="{{ member.mother_id if member and member.mother_id else '' }}">
+      </span>
+    </label>
+    <label>生平简介
+      <textarea name="biography" rows="4">{{ member.biography if member else '' }}</textarea>
+    </label>
+    <button type="submit">保存</button>
+    <a class="btn ghost" href="{{ url_for('genealogy_detail', gid=gid) }}">取消</a>
+  </form>
+  <p class="muted small">提示：父亲/母亲必须是同一族谱已有成员，且性别匹配；父母出生年应早于本人。</p>
+</div>
+{% endblock %}

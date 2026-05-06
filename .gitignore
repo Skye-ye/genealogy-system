@@ -1,0 +1,33 @@
+# --- Python ---
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# --- Secrets & runtime ---
+.env
+*.log
+
+# --- Postgres docker volume (machine-specific, large, owned by container) ---
+pgdata/
+
+# --- Generated CSVs (regenerable via data/generate_data.py) ---
+data/csv/
+
+# --- DB dumps: ignore ad-hoc dumps but KEEP the canonical submission file ---
+*.dump
+!backup/genealogy.dump
+
+# --- uv ---
+# Cache directories: ignore. Lockfile: COMMIT (reproducible installs).
+.uv/
+
+# --- OS junk ---
+.DS_Store
+Thumbs.db
+
+# --- Editor / IDE caches ---
+*.swp
+*.swo
+.idea/
+.vscode/

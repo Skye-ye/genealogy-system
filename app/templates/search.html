@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}跨族谱搜索{% endblock %}
+{% block content %}
+<h1>跨族谱搜索</h1>
+<p class="muted">在你有权限访问的所有族谱中按姓名/性别/在世/出生年范围检索成员。</p>
+
+<form method="get" class="card search-filters">
+  <div class="filter-row">
+    <label>姓名（模糊）
+      <input name="q" value="{{ q or '' }}" placeholder="如：李建" autofocus>
+    </label>
+    <label>性别
+      <select name="gender">
+        <option value="">不限</option>
+        <option value="M" {% if gender == 'M' %}selected{% endif %}>男</option>
+        <option value="F" {% if gender == 'F' %}selected{% endif %}>女</option>
+      </select>
+    </label>
+    <label>状态
+      <select name="status">
+        <option value="">不限</option>
+        <option value="alive"    {% if status == 'alive' %}selected{% endif %}>在世</option>
+        <option value="deceased" {% if status == 'deceased' %}selected{% endif %}>已故</option>
+      </select>
+    </label>
+    <label>出生年 ≥
+      <input name="born_from" type="number" value="{{ born_from or '' }}" placeholder="如 1900">
+    </label>
+    <label>出生年 ≤
+      <input name="born_to" type="number" value="{{ born_to or '' }}" placeholder="如 2000">
+    </label>
+    <div class="filter-buttons">
+      <button type="submit">搜索</button>
+      <a class="btn ghost" href="{{ url_for('cross_search') }}">清空</a>
+    </div>
+  </div>
+</form>
+
+{% if has_filter %}
+  <div class="search-summary">
+    {% if total_count >= 5000 %}
+      共匹配 <strong>5000+</strong>
+    {% else %}
+      共匹配 <strong>{{ total_count }}</strong>
+    {% endif %}
+    条记录
+    {% if results|length < total_count %}
+      （展示前 {{ results|length }} 条）
+    {% endif %}
+    {% if elapsed_ms %} · 耗时 {{ '%.1f'|format(elapsed_ms) }} ms{% endif %}
+  </div>
+
+  {% if facet_by_genealogy %}
+    <div class="card facets">
+      <h2 class="small-title">按族谱分组</h2>
+      <ul class="facet-list">
+        {% for f in facet_by_genealogy %}
+          <li>
+            <a href="{{ url_for('genealogy_detail', gid=f.id, q=q) }}">{{ f.name }}</a>
+            <span class="facet-count">{{ f.n }}</span>
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+  {% endif %}
+
+  <div class="card">
+    <table>
+      <thead>
+        <tr><th>族谱</th><th>姓名</th><th>性别</th><th>生 – 卒</th><th>辈分</th><th>ID</th></tr>
+      </thead>
+      <tbody>
+      {% for r in results %}
+        <tr>
+          <td><a href="{{ url_for('genealogy_detail', gid=r.genealogy_id) }}">{{ r.genealogy_name }}</a></td>
+          <td><a href="{{ url_for('member_detail', mid=r.id) }}">{{ r.name }}</a></td>
+          <td>{{ '男' if r.gender == 'M' else '女' }}</td>
+          <td>{{ r.birth_year or '?' }} – {{ r.death_year or '在世' }}</td>
+          <td>{{ r.generation }}</td>
+          <td class="muted small">#{{ r.id }}</td>
+        </tr>
+      {% else %}
+        <tr><td colspan="6" class="muted">无匹配结果</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endif %}
+{% endblock %}

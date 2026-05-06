@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}管理面板{% endblock %}
+{% block content %}
+<header class="page-header">
+  <div>
+    <h1>系统管理面板</h1>
+    <p class="muted">系统级统计、用户与族谱总览。</p>
+  </div>
+</header>
+
+<section class="stats">
+  <div class="stat-card">
+    <div class="stat-num">{{ totals.n_genealogies }}</div>
+    <div class="stat-label">族谱总数</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-num">{{ totals.n_total }}</div>
+    <div class="stat-label">系统成员总数</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-num">{{ totals.n_male }}</div>
+    <div class="stat-label">男性</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-num">{{ totals.n_female }}</div>
+    <div class="stat-label">女性</div>
+  </div>
+  <div class="stat-card">
+    {% set m = totals.n_male or 0 %}{% set f = totals.n_female or 0 %}{% set t = m + f %}
+    <div class="stat-num">{% if t %}{{ ((m / t) * 100) | round(1) }} : {{ ((f / t) * 100) | round(1) }}{% else %}—{% endif %}</div>
+    <div class="stat-label">男 : 女 比例 (%)</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-num">{{ users|length }}</div>
+    <div class="stat-label">注册用户</div>
+  </div>
+</section>
+
+<section class="card">
+  <h2>用户</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th><th>用户名</th><th>邮箱</th>
+        <th>拥有族谱</th><th>协作族谱</th><th>管理员</th><th></th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for u in users %}
+      <tr>
+        <td>{{ u.id }}</td>
+        <td>{{ u.username }}</td>
+        <td class="muted">{{ u.email or '' }}</td>
+        <td>{{ u.n_owned }}</td>
+        <td>{{ u.n_collab }}</td>
+        <td>{% if u.is_admin %}<span class="badge badge-admin">admin</span>{% else %}—{% endif %}</td>
+        <td>
+          {% if u.id != g.user.id %}
+          <form method="post" action="{{ url_for('admin_toggle_admin', uid=u.id) }}" class="inline">
+            <button class="btn ghost small">{% if u.is_admin %}撤销{% else %}授予{% endif %}</button>
+          </form>
+          {% endif %}
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</section>
+
+<section class="card">
+  <h2>所有族谱</h2>
+  <table>
+    <thead>
+      <tr><th>ID</th><th>谱名</th><th>姓氏</th><th>拥有者</th>
+          <th>修谱日期</th><th>人数</th><th>最深辈分</th></tr>
+    </thead>
+    <tbody>
+    {% for gen in genealogies %}
+      <tr>
+        <td>{{ gen.id }}</td>
+        <td><a href="{{ url_for('genealogy_detail', gid=gen.id) }}">{{ gen.name }}</a></td>
+        <td>{{ gen.surname }}</td>
+        <td>{{ gen.owner }}</td>
+        <td>{{ gen.compilation_date }}</td>
+        <td>{{ gen.n_members }}</td>
+        <td>{{ gen.max_gen }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endblock %}

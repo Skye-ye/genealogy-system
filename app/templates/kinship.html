@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}亲缘查询{% endblock %}
+{% block content %}
+<h1>亲缘关系查询</h1>
+<p class="muted">输入两个成员 ID，查找两人之间的亲缘路径（通过父子/母女/婚姻关系）。</p>
+
+<form method="get" class="card narrow">
+  <label>成员 A（输入姓名搜索）
+    <span class="typeahead-wrap">
+      <input type="text" data-typeahead
+             data-fetch-url="{{ url_for('api_member_search') }}"
+             data-id-input="a"
+             placeholder="开始输入姓名..."
+             value="{{ a_name or '' }}" required autocomplete="off">
+      <input type="hidden" name="a" value="{{ a or '' }}">
+    </span>
+  </label>
+  <label>成员 B（输入姓名搜索）
+    <span class="typeahead-wrap">
+      <input type="text" data-typeahead
+             data-fetch-url="{{ url_for('api_member_search') }}"
+             data-id-input="b"
+             placeholder="开始输入姓名..."
+             value="{{ b_name or '' }}" required autocomplete="off">
+      <input type="hidden" name="b" value="{{ b or '' }}">
+    </span>
+  </label>
+  <label>最大搜索深度
+    <input name="max_depth" type="number" min="2" max="60" value="{{ max_depth or 30 }}">
+    <span class="muted small">默认 30，最高 60</span>
+  </label>
+  <button type="submit">查询</button>
+</form>
+
+{% if err %}
+  <div class="flash flash-error">{{ err }}</div>
+{% endif %}
+
+{% if result %}
+  {% if result.path %}
+    <div class="card">
+      <h2>找到一条路径（{{ result.path|length - 1 }} 步{% if elapsed_ms %} · 耗时 {{ '%.1f'|format(elapsed_ms) }} ms{% endif %}）</h2>
+      <ol class="kinship-path">
+        {% for step in result.path %}
+          <li>
+            {% if step.edge != 'start' %}<span class="edge-label">→ {{ step.edge }} →</span>{% endif %}
+            <a href="{{ url_for('member_detail', mid=step.id) }}">{{ step.name }}</a>
+            <span class="muted small">#{{ step.id }}</span>
+          </li>
+        {% endfor %}
+      </ol>
+    </div>
+  {% else %}
+    <div class="card flash-warn">
+      两人之间未找到 {{ max_depth }} 步以内的亲缘关系{% if elapsed_ms %}（搜索耗时 {{ '%.1f'|format(elapsed_ms) }} ms）{% endif %}。
+      可能的原因：不在同一族谱（系统不允许跨族谱亲缘），或关系链超过最大深度（可调高上方"最大搜索深度"再试）。
+    </div>
+  {% endif %}
+{% endif %}
+{% endblock %}

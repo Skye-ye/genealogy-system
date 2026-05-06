@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<h1>Dashboard{% if is_admin %} <span class="badge badge-admin">系统视图</span>{% endif %}</h1>
+{% if is_admin %}
+  <p class="muted">作为管理员，你可以看到系统中的所有族谱。下方统计为<strong>全系统</strong>合计。
+    <a href="{{ url_for('admin_panel') }}">前往管理面板 →</a></p>
+{% endif %}
+
+<section class="stats">
+  <div class="stat-card">
+    <div class="stat-num">{{ totals.n_total or 0 }}</div>
+    <div class="stat-label">{{ '系统成员总数' if is_admin else '家族总人数' }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-num">{{ totals.n_male or 0 }}</div>
+    <div class="stat-label">男性</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-num">{{ totals.n_female or 0 }}</div>
+    <div class="stat-label">女性</div>
+  </div>
+  <div class="stat-card">
+    {% set m = totals.n_male or 0 %}{% set f = totals.n_female or 0 %}
+    {% set t = m + f %}
+    <div class="stat-num">{% if t %}{{ ((m / t) * 100) | round(1) }} : {{ ((f / t) * 100) | round(1) }}{% else %}—{% endif %}</div>
+    <div class="stat-label">男 : 女 比例 (%)</div>
+  </div>
+</section>
+
+<section class="genealogy-list">
+  <h2>族谱</h2>
+  <a class="btn primary" href="{{ url_for('genealogy_new') }}">+ 新建族谱</a>
+  <table>
+    <thead>
+      <tr><th>谱名</th><th>姓氏</th><th>修谱时间</th><th>人数</th><th>权限</th></tr>
+    </thead>
+    <tbody>
+    {% for gen in genealogies %}
+      <tr>
+        <td><a href="{{ url_for('genealogy_detail', gid=gen.id) }}">{{ gen.name }}</a></td>
+        <td>{{ gen.surname }}</td>
+        <td>{{ gen.compilation_date }}</td>
+        <td>{{ gen.n_members }}</td>
+        <td><span class="badge badge-{{ gen.access }}">{{ gen.access }}</span></td>
+      </tr>
+    {% else %}
+      <tr><td colspan="5" class="muted">还没有族谱，点击上方按钮新建。</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endblock %}

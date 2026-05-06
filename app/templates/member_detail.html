@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block title %}{{ m.name }}{% endblock %}
+{% block content %}
+<header class="page-header">
+  <div>
+    <h1>{{ m.name }} <span class="muted">#{{ m.id }}</span></h1>
+    <p class="muted">
+      性别 {{ '男' if m.gender == 'M' else '女' }}
+      · 生 {{ m.birth_year or '?' }} – 卒 {{ m.death_year or '在世' }}
+      · 第 {{ m.generation }} 代
+      · 族谱 #{{ m.genealogy_id }}
+    </p>
+  </div>
+  <div class="actions">
+    <a class="btn" href="{{ url_for('member_tree', mid=m.id) }}">查看子孙树</a>
+    <a class="btn" href="{{ url_for('member_ancestors', mid=m.id) }}">追溯祖先</a>
+    <a class="btn ghost" href="{{ url_for('member_edit', mid=m.id) }}">编辑</a>
+    <form method="post" action="{{ url_for('member_delete', mid=m.id) }}" class="inline"
+          onsubmit="return confirm('确定删除此成员？');">
+      <button class="btn danger">删除</button>
+    </form>
+  </div>
+</header>
+
+<section class="card">
+  <h2>父母</h2>
+  <ul>
+    <li><strong>父亲：</strong>{% if father %}<a href="{{ url_for('member_detail', mid=father.id) }}">{{ father.name }}</a>{% else %}—{% endif %}</li>
+    <li><strong>母亲：</strong>{% if mother %}<a href="{{ url_for('member_detail', mid=mother.id) }}">{{ mother.name }}</a>{% else %}—{% endif %}</li>
+  </ul>
+</section>
+
+<section class="card">
+  <h2>配偶与子女</h2>
+  <table>
+    <thead><tr><th>关系</th><th>姓名</th><th>性别</th><th>生年</th><th>卒年</th></tr></thead>
+    <tbody>
+    {% for r in relations %}
+      <tr>
+        <td>{{ '配偶' if r.kind == 'spouse' else '子女' }}</td>
+        <td><a href="{{ url_for('member_detail', mid=r.id) }}">{{ r.name }}</a></td>
+        <td>{{ r.gender }}</td>
+        <td>{{ r.birth_year or '' }}</td>
+        <td>{{ r.death_year or '' }}</td>
+      </tr>
+    {% else %}
+      <tr><td colspan="5" class="muted">暂无</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</section>
+
+{% if m.biography %}
+<section class="card">
+  <h2>生平简介</h2>
+  <p>{{ m.biography }}</p>
+</section>
+{% endif %}
+
+<section class="card">
+  <h2>跨族谱链接 <span class="muted small">（同一现实人物在多个族谱中的记录）</span></h2>
+  {% if links %}
+    <table>
+      <thead><tr><th>链接成员</th><th>所在族谱</th><th>性别</th><th>生 – 卒</th><th>备注</th>{% if g.user.is_admin %}<th></th>{% endif %}</tr></thead>
+      <tbody>
+        {% for l in links %}
+        <tr>
+          <td><a href="{{ url_for('member_detail', mid=l.id) }}">{{ l.name }}</a> <span class="muted small">#{{ l.id }}</span></td>
+          <td><a href="{{ url_for('genealogy_detail', gid=l.genealogy_id) }}">{{ l.genealogy_name }}</a></td>
+          <td>{{ '男' if l.gender == 'M' else '女' }}</td>
+          <td>{{ l.birth_year or '?' }} – {{ l.death_year or '在世' }}</td>
+          <td class="muted small">{{ l.note or '' }}</td>
+          {% if g.user.is_admin %}
+          <td>
+            <form method="post" action="{{ url_for('member_link_delete', mid=m.id, link_id=l.link_id) }}" class="inline" onsubmit="return confirm('删除此链接？');">
+              <button class="btn ghost small">删除</button>
+            </form>
+          </td>
+          {% endif %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p class="muted">暂无跨族谱链接。</p>
+  {% endif %}
+
+  {% if g.user.is_admin %}
+  <form method="post" action="{{ url_for('member_link_add', mid=m.id) }}" class="link-add-form">
+    <span class="typeahead-wrap">
+      <input type="text" data-typeahead
+             data-fetch-url="{{ url_for('api_member_search') }}"
+             data-id-input="other_id"
+             placeholder="输入要链接到的成员姓名（其他族谱）..."
+             autocomplete="off">
+      <input type="hidden" name="other_id">
+    </span>
+    <input name="note" placeholder="备注（可选）">
+    <button>添加链接</button>
+  </form>
+  {% endif %}
+</section>
+{% endblock %}

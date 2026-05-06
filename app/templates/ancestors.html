@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}{{ m.name }} · 祖先{% endblock %}
+{% block content %}
+<header class="page-header">
+  <div>
+    <h1>{{ m.name }} 的祖先</h1>
+    <p class="muted">共 {{ ancestors|length }} 位祖先（含父系与母系），按代数分组。</p>
+  </div>
+  <div class="actions">
+    <a class="btn" href="{{ url_for('member_detail', mid=m.id) }}">返回</a>
+  </div>
+</header>
+
+<div class="card">
+  <table>
+    <thead><tr><th>代</th><th>姓名</th><th>性别</th><th>生卒</th><th>关系链</th></tr></thead>
+    <tbody>
+    {% for a in ancestors %}
+      <tr>
+        <td>{{ a.depth }}</td>
+        <td><a href="{{ url_for('member_detail', mid=a.id) }}">{{ a.name }}</a></td>
+        <td>{{ a.gender }}</td>
+        <td>{{ a.birth_year or '?' }} – {{ a.death_year or '?' }}</td>
+        <td><code>{{ a.relation }}</code></td>
+      </tr>
+    {% else %}
+      <tr><td colspan="5" class="muted">无可追溯的祖先</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
