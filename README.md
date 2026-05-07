@@ -12,7 +12,26 @@ A Chinese-style 家谱 management system covering all five deliverables of the
 
 ## Quick start
 
-### 1. Bring up PostgreSQL (Docker)
+### 1. Configure environment
+
+`.env` is gitignored, so you must create it before running any Python script.
+Match `DATABASE_URL` to whatever credentials you'll give Postgres in step 2.
+
+```bash
+cat > .env <<'EOF'
+DATABASE_URL=postgresql://genealogy:genealogy_dev_pw@localhost:5432/genealogy
+FLASK_SECRET_KEY=change-me-to-a-long-random-string
+EOF
+```
+
+| Variable | Required | Default | Notes |
+|---|---|---|---|
+| `DATABASE_URL` | yes | — | psycopg-style connection string |
+| `FLASK_SECRET_KEY` | no | `dev-only` | set a real value before deploying |
+| `PORT` | no | `5000` | web app listen port |
+| `FLASK_DEBUG` | no | off | `1` enables debug mode |
+
+### 2. Bring up PostgreSQL (Docker)
 ```bash
 docker run -d \
   --name genealogy-pg \
@@ -28,7 +47,7 @@ docker exec genealogy-pg psql -U genealogy -d genealogy \
   -c "CREATE EXTENSION IF NOT EXISTS pg_trgm;"
 ```
 
-### 2. Apply schema and indexes
+### 3. Apply schema and indexes
 ```bash
 docker cp sql/01_schema.sql  genealogy-pg:/tmp/
 docker cp sql/02_indexes.sql genealogy-pg:/tmp/
@@ -36,7 +55,7 @@ docker exec genealogy-pg psql -U genealogy -d genealogy -f /tmp/01_schema.sql
 docker exec genealogy-pg psql -U genealogy -d genealogy -f /tmp/02_indexes.sql
 ```
 
-### 3. Generate and load synthetic data
+### 4. Generate and load synthetic data
 ```bash
 uv sync                       # install Python dependencies
 uv run python data/generate_data.py   # writes data/csv/*.csv (~30s)
@@ -49,12 +68,51 @@ docker cp backup/genealogy.dump genealogy-pg:/tmp/
 docker exec genealogy-pg pg_restore -U genealogy -d genealogy --clean --if-exists /tmp/genealogy.dump
 ```
 
-### 4. Run the web app
+### 5. Run the web app
 ```bash
 uv run python app/app.py
 # open http://127.0.0.1:5000
 # demo login:  user1 / password1   ... user5 / password5
+# (user1 has admin privileges)
 ```
+
+---
+
+## Deploying on a remote server
+
+When cloning to a fresh server (e.g. via `git clone`), neither `.env` nor
+`data/csv/` come with the repo — both are gitignored. Bootstrap order:
+
+```bash
+git clone git@github.com:Skye-ye/genealogy-system.git
+cd genealogy-system
+
+# step 1: create .env (see "Configure environment" above)
+# step 2: start Postgres (Docker, or point DATABASE_URL at an existing instance)
+# step 3: apply schema + indexes
+# step 4a: option A — restore the bundled dump (fastest)
+docker cp backup/genealogy.dump genealogy-pg:/tmp/
+docker exec genealogy-pg pg_restore -U genealogy -d genealogy \
+  --clean --if-exists /tmp/genealogy.dump
+
+# step 4b: option B — regenerate from scratch (~30s + ~3s)
+uv sync
+uv run python data/generate_data.py
+uv run python data/load_data.py
+
+# step 5: run the app
+uv run python app/app.py
+```
+
+The dev server in `app/app.py` binds to `127.0.0.1` (localhost only). To reach
+it from your laptop, either:
+
+- **SSH port-forward** (no code change):
+  `ssh -L 5000:127.0.0.1:5000 user@server`, then open `http://127.0.0.1:5000` locally.
+- **Bind publicly**: change `host="127.0.0.1"` → `host="0.0.0.0"` in `app/app.py:1040`.
+
+For anything past a quick demo, put the app behind gunicorn + nginx rather
+than the Flask dev server.
 
 ---
 
